@@ -94,7 +94,7 @@
                 Pengaturan Geolokasi
               </h3>
             </v-col>
-            <geolokasi />
+            <geolokasi @setResponse="(res) => (this.response = res)" />
           </v-row>
         </v-card>
       </v-col>

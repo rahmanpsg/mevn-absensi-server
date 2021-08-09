@@ -8,6 +8,7 @@ import userModule from "./user";
 import absenModule from "./absen";
 import karyawanModule from "./karyawan";
 import ruleModule from "./rule";
+import geolokasiModule from "./geolokasi";
 
 Vue.use(Vuex);
 
@@ -17,6 +18,7 @@ export default new Vuex.Store({
     absenModule,
     karyawanModule,
     ruleModule,
+    geolokasiModule,
   },
   plugins: [
     createPersistedState({

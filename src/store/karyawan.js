@@ -23,11 +23,10 @@ export default {
       try {
         const res = await axios.post("user", karyawan);
 
-        if (res.status == 200)
-          commit("setKaryawans", [
-            ...state.karyawans,
-            Object.assign({ _id: res.data.id }, karyawan),
-          ]);
+        if (res.status == 200) {
+          karyawan._id = res.data.id;
+          commit("setKaryawans", [...state.karyawans, karyawan]);
+        }
 
         return res;
       } catch (error) {

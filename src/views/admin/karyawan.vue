@@ -63,7 +63,7 @@
                     <v-col cols="12" sm="2" md="2">
                       <v-btn
                         color="primary"
-                        :disabled="editedItem.image != ''"
+                        :disabled="editedItem.image != undefined"
                         @click="$refs.uploader.click()"
                       >
                         Tambah Image
@@ -80,13 +80,16 @@
                     </v-col>
                   </v-row>
 
-                  <v-row justify="space-around" v-if="editedItem.image != ''">
+                  <v-row
+                    justify="space-around"
+                    v-if="editedItem.image != undefined"
+                  >
                     <v-col cols="4">
                       <div class="title mb-1">
                         <v-btn
                           small
                           color="error"
-                          @click="editedItem.image = ''"
+                          @click="editedItem.image = undefined"
                         >
                           Hapus
                           <v-icon right> mdi-delete </v-icon>
@@ -123,6 +126,8 @@ import DialogDelete from "@/components/DialogDelete.vue";
 import SnackbarResponse from "@/components/SnackbarResponse.vue";
 import { mapState, mapActions } from "vuex";
 
+import KaryawanModel from "../../models/karyawan";
+
 export default {
   components: {
     Table,
@@ -148,8 +153,7 @@ export default {
       dialog: false,
       dialogDelete: false,
       editedIndex: -1,
-      editedItem: { image: "" },
-      defaultItem: { image: "" },
+      editedItem: new KaryawanModel({}),
       valid: true,
       response: { show: false, text: "" },
       alertImage: false,
@@ -203,18 +207,6 @@ export default {
       "deleteKaryawan",
     ]),
     onFileChanged(e) {
-      //   const files = e.target.files;
-      //   const total = this.editedItem.images.length + files.length;
-
-      //   if (total > 3) {
-      //     this.alertImage = true;
-
-      //     setTimeout(() => {
-      //       this.alertImage = false;
-      //     }, 2500);
-      //     return;
-      //   }
-
       for (const image of e.target.files) {
         this.createBase64(image);
       }
@@ -229,7 +221,9 @@ export default {
       reader.readAsDataURL(file);
     },
     tambah() {
-      this.editedItem = JSON.parse(JSON.stringify(this.defaultItem));
+      this.editedItem = new KaryawanModel({});
+
+      console.log(this.editedItem);
       this.dialog = true;
 
       this.$nextTick(() => {
@@ -238,13 +232,15 @@ export default {
     },
     edit(item) {
       this.editedIndex = this.items.indexOf(item);
-      this.editedItem = JSON.parse(JSON.stringify(item));
+      this.editedItem = new KaryawanModel(item);
 
       this.dialog = true;
     },
     showDialogHapus(item) {
       this.editedIndex = this.items.indexOf(item);
-      this.editedItem = Object.assign({}, item);
+      this.editedItem = new KaryawanModel(item);
+
+      console.log(item);
 
       this.dialogDelete = true;
     },
@@ -263,14 +259,16 @@ export default {
 
       if (!this.valid) return;
 
+      console.log(this.editedItem);
+
       let res;
       if (this.editedIndex > -1) {
         res = await this.editKaryawan({
           index: this.editedIndex,
-          karyawan: { ...this.editedItem },
+          karyawan: this.editedItem,
         });
       } else {
-        res = await this.addKaryawan({ ...this.editedItem });
+        res = await this.addKaryawan(this.editedItem);
       }
 
       this.response = { show: true, text: res.data.message };
@@ -282,7 +280,7 @@ export default {
       this.dialogDelete = false;
 
       this.$nextTick(() => {
-        this.editedItem = JSON.parse(JSON.stringify(this.defaultItem));
+        this.editedItem = new KaryawanModel({});
         this.editedIndex = -1;
       });
     },

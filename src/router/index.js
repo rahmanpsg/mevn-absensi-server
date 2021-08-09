@@ -42,6 +42,11 @@ const routes = [
         component: () => import("../views/admin/karyawan.vue"),
       },
       {
+        path: "absen",
+        name: "absen",
+        component: () => import("../views/admin/absen.vue"),
+      },
+      {
         path: "pengaturan",
         name: "pengaturan",
         component: () => import("../views/admin/pengaturan.vue"),
@@ -51,7 +56,7 @@ const routes = [
 ];
 
 const router = new VueRouter({
-  mode: "history",
+  // mode: "history",
   base: process.env.BASE_URL,
   routes,
 });

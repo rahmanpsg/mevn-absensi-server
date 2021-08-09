@@ -11,12 +11,14 @@ router.get("/", auth, async (req, res) => {
 });
 
 // save kantor coordinate
-router.post("/", async (req, res) => {
+router.post("/", auth, async (req, res) => {
   const { latitude, longitude, radius } = req.body;
+
+  await geolocationModel.deleteMany();
 
   const geolocations = new geolocationModel({ latitude, longitude, radius });
 
-  geolocations.save((err, doc) => {
+  geolocations.save((err) => {
     if (err) return res.status(500).send({ message: err });
 
     res.status(200).send({

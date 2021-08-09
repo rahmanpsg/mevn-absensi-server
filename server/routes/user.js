@@ -4,7 +4,8 @@ const router = express.Router();
 
 // get all data user
 router.get("/", async (req, res) => {
-  const data = await userModel.find({ role: "karyawan" });
+  const select = req.query.select;
+  const data = await userModel.find({ role: "karyawan" }, select || "-role");
 
   res.send(data);
 });
@@ -22,11 +23,12 @@ router.post("/", async (req, res) => {
     role: "karyawan",
   });
 
-  users.save((err) => {
+  users.save((err, doc) => {
     if (err) return res.status(500).send({ message: err });
 
     res.status(200).send({
       message: "Data karyawan berhasil disimpan",
+      id: doc._id,
     });
   });
 });

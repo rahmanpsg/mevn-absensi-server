@@ -15,13 +15,21 @@ const geolocationRoute = require("./routes/geolocation");
 const absenRoute = require("./routes/absen");
 const userRoute = require("./routes/user");
 const ruleRoute = require("./routes/rule");
+const cetakRoute = require("./routes/cetak");
 const totalRoute = require("./routes/total");
+
+app.use(express.static("./dist/"));
+
+app.get("/", (req, res) => {
+  res.sendFile(__dirname, "./dist/index.html");
+});
 
 app.use("/login", loginRoute);
 app.use("/geolocation", geolocationRoute);
 app.use("/absen", absenRoute);
 app.use("/user", userRoute);
 app.use("/rule", ruleRoute);
+app.use("/cetak", cetakRoute);
 app.use("/total", totalRoute);
 
 module.exports = app;
