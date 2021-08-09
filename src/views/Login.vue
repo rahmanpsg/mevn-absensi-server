@@ -5,7 +5,7 @@
       outlined
       :loading="loading"
       class="mx-auto my-12"
-      min-width="500"
+      width="100%"
       max-width="500"
       v-bind:key="show"
     >
