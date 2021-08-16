@@ -1,6 +1,6 @@
 <template>
   <v-row>
-    <v-dialog v-model="dialog" width="800">
+    <v-dialog v-model="dialog" width="800" persistent>
       <v-card>
         <v-card-title class="text-h6 secondary white--text">
           Cetak Laporan
@@ -41,7 +41,9 @@ export default {
       return axios.defaults.baseURL || "";
     },
     cetakUrl() {
-      return `${this.baseUrl}cetak/karyawan/${this.id}?bulan=${this.bulan}&tahun=${this.tahun}`;
+      return `${this.baseUrl}cetak/${
+        this.id != null ? "karyawan/" + this.id : ""
+      }?bulan=${this.bulan}&tahun=${this.tahun}`;
     },
   },
 };

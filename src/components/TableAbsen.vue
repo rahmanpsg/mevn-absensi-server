@@ -13,29 +13,37 @@
 
       <template v-slot:[`item.nama`]="{ item }">
         <v-row align="center" class="spacer py-3" no-gutters>
-          <v-col cols="4" sm="2" md="1">
+          <v-col cols="12" sm="2" md="2">
             <v-avatar>
-              <img :src="`data:image/jpeg;base64,${item.image}`" />
+              <img
+                v-if="item.image"
+                :src="`data:image/jpeg;base64,${item.image}`"
+              />
+              <img v-else src="@/assets/user.png" />
             </v-avatar>
           </v-col>
-          <v-col class="hidden-xs-only pl-8" sm="5" md="3">
+          <v-col cols="12" sm="10" md="10">
             <h4 class="caption" v-html="item.nama"></h4>
           </v-col>
         </v-row>
       </template>
 
       <template v-slot:[`item.waktuDatang`]="{ item, value }">
-        <v-chip v-if="value" :color="getColor(item.infoAbsenDatang)" dark>
-          <h4 class="caption" v-html="value"></h4>
+        <v-chip v-if="item.izin || item.cuti" color="primary">
+          <h4 class="overline" v-html="item.izin ? 'Izin : ' : 'Cuti : '"></h4>
+          <h4 class="overline" v-html="item.keterangan"></h4>
         </v-chip>
-        <h4 v-else class="caption">-</h4>
+        <v-chip v-else-if="value" :color="getColor(item.infoAbsenDatang)" dark>
+          <h4 class="overline" v-html="value"></h4>
+        </v-chip>
+        <h4 v-else class="overline">-</h4>
       </template>
 
       <template v-slot:[`item.waktuPulang`]="{ item, value }">
         <v-chip v-if="value" :color="getColor(item.infoAbsenPulang)" dark>
-          <h4 class="caption" v-html="value"></h4>
+          <h4 class="overline" v-html="value"></h4>
         </v-chip>
-        <h4 v-else class="caption">-</h4>
+        <h4 v-else class="overline">-</h4>
       </template>
     </v-data-table>
   </v-col>

@@ -14,7 +14,13 @@
         <v-toolbar-title>{{ formTitle }}</v-toolbar-title>
         <v-spacer></v-spacer>
         <v-toolbar-items>
-          <v-btn dark text @click="$emit('simpan')"> Simpan </v-btn>
+          <v-col v-if="loading">
+            <v-progress-circular
+              indeterminate
+              color="white"
+            ></v-progress-circular>
+          </v-col>
+          <v-btn v-else dark text @click="$emit('simpan')"> Simpan </v-btn>
         </v-toolbar-items>
       </v-toolbar>
 
@@ -29,6 +35,7 @@
 export default {
   props: {
     dialog: Boolean,
+    loading: Boolean,
     formTitle: String,
   },
 };

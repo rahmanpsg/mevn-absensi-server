@@ -1,17 +1,18 @@
 const express = require("express");
 const userModel = require("../models/user");
 const router = express.Router();
+const auth = require("../middleware/auth");
 
 // get all data user
-router.get("/", async (req, res) => {
+router.get("/", auth, async (req, res) => {
   const select = req.query.select;
-  const data = await userModel.find({ role: "karyawan" }, select || "-role");
+  const data = await userModel.find({ role: "karyawan" }, select || "-role ");
 
   res.send(data);
 });
 
 // save data user
-router.post("/", async (req, res) => {
+router.post("/", auth, async (req, res) => {
   const { username, password, nama, nik, image } = req.body;
 
   const users = new userModel({
@@ -34,7 +35,7 @@ router.post("/", async (req, res) => {
 });
 
 // ubah data karyawan
-router.put("/", async (req, res) => {
+router.put("/", auth, async (req, res) => {
   const { _id, nik, nama, username, password, images } = req.body;
 
   const newData = { nik, nama, username, password, images };
@@ -54,7 +55,7 @@ router.put("/", async (req, res) => {
 });
 
 // hapus data karyawan
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", auth, async (req, res) => {
   const _id = req.params.id;
 
   if (!_id) {

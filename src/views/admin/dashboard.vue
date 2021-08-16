@@ -100,7 +100,7 @@ export default {
         sortable: false,
         value: "index",
       },
-      { text: "Nama", value: "nama" },
+      { text: "Nama", value: "nama", width: 450 },
       {
         text: "Jam Datang",
         value: "waktuDatang",

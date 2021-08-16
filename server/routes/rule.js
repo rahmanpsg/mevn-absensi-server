@@ -1,9 +1,10 @@
 const express = require("express");
 const ruleModel = require("../models/rule");
 const router = express.Router();
+const auth = require("../middleware/auth");
 
 // get absen rule
-router.get("/", async (req, res) => {
+router.get("/", auth, async (req, res) => {
   const all = req.query.all;
 
   if (all != null) {
@@ -19,7 +20,7 @@ router.get("/", async (req, res) => {
   res.send(data);
 });
 
-router.post("/", async (req, res) => {
+router.post("/", auth, async (req, res) => {
   const { hari, jamDatang, jamPulang, lembur, libur } = req.body;
 
   //   periksa jika telah melakukan rule hari telah ada

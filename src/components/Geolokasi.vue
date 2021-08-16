@@ -11,9 +11,10 @@
       <v-col cols="6" sm="1" md="1"> Radius : </v-col>
       <v-col cols="6" sm="2" md="2" class="mt-4">
         <v-slider
-          hint="Radius"
+          :hint="`${radius} m`"
           max="1000"
           min="0"
+          persistent-hint
           :value="radius"
           @change="setRadius"
         ></v-slider>
@@ -39,7 +40,16 @@
           map-type-id="hybrid"
           style="width: auto; height: 450px"
         >
+          <gmap-info-window
+            :options="infoOptions"
+            :position="center"
+            :opened="infoWinOpen"
+            @closeclick="infoWinOpen = false"
+          >
+          </gmap-info-window>
+
           <gmap-marker
+            @dragstart="infoWinOpen = false"
             @dragend="dragMarker"
             :position="center"
             :clickable="true"
@@ -73,6 +83,8 @@
   </v-col>
 </template>
 
+<script src="vue-google-maps.js"></script>
+
 <script>
 import { mapState, mapActions } from "vuex";
 
@@ -85,15 +97,32 @@ export default {
         fillColor: "#fbaccc",
       },
       infoContent: "Silahkan geser marker ke lokasi kantor",
+      infoWinOpen: true,
     };
   },
   async created() {
     await this.getData();
   },
   computed: {
-    ...mapState("geolokasiModule", ["latitude", "longitude", "radius"]),
+    ...mapState("geolokasiModule", [
+      "latitude",
+      "longitude",
+      "alamat",
+      "radius",
+    ]),
     center() {
       return { lat: this.latitude, lng: this.longitude };
+    },
+    infoOptions() {
+      return {
+        content: `${this.alamat ? this.alamat + `<br><br>` : ``}Latitude : ${
+          this.latitude
+        } <br>Longitude : ${this.longitude}`,
+        pixelOffset: {
+          width: 0,
+          height: -35,
+        },
+      };
     },
   },
   methods: {
@@ -103,11 +132,21 @@ export default {
       "getData",
       "saveData",
     ]),
-    setPlace(place) {
-      this.setPosition(place.geometry.location.toJSON());
+    async getPlaceName(location) {
+      const geocoder = new google.maps.Geocoder();
+      const res = await geocoder.geocode({ location });
+      return res.results[0].formatted_address;
+    },
+    async setPlace(place) {
+      const position = place.geometry.location.toJSON();
+      const alamat = await this.getPlaceName(position);
+      this.setPosition({ ...position, alamat });
     },
     async dragMarker(PointerEvent) {
-      this.setPosition(PointerEvent.latLng.toJSON());
+      const position = PointerEvent.latLng.toJSON();
+      const alamat = await this.getPlaceName(position);
+      this.setPosition({ ...position, alamat });
+      this.infoWinOpen = true;
     },
     async saveClick() {
       const res = await this.saveData();

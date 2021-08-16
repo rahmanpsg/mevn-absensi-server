@@ -22,10 +22,7 @@
       </v-list>
       <v-divider></v-divider>
       <v-list nav dense>
-        <v-list-item-group
-          v-model="selectedItem"
-          active-class="primary--text text--accent-4"
-        >
+        <v-list-item-group active-class="primary--text text--accent-4">
           <v-list-item
             v-for="(item, i) in items"
             :key="i"
@@ -54,7 +51,7 @@
       <v-card class="flex" color="primary" flat tile>
         <v-card-text class="py-2 white--text text-center">
           &copy; {{ new Date().getFullYear() }} —
-          <strong>Aplikasi Ujian Komprehensif Berbasis Client Server</strong>
+          <strong>Aplikasi Absensi Karyawan</strong>
         </v-card-text>
       </v-card>
     </v-footer>
@@ -68,7 +65,7 @@ export default {
   data() {
     return {
       drawer: true,
-      selectedItem: 0,
+      // selectedItem: 0,
       items: [
         { text: "Dashboard", href: "/admin/", icon: "mdi-home" },
         {
@@ -82,6 +79,21 @@ export default {
           icon: "mdi-book",
         },
         {
+          text: "Data Izin",
+          href: "/admin/izin",
+          icon: "mdi-calendar-account",
+        },
+        {
+          text: "Data Cuti",
+          href: "/admin/cuti",
+          icon: "mdi-calendar-month",
+        },
+        {
+          text: "Laporan",
+          href: "/admin/laporan",
+          icon: "mdi-printer",
+        },
+        {
           text: "Pengaturan",
           href: "/admin/pengaturan",
           icon: "mdi-cog",
@@ -91,6 +103,9 @@ export default {
   },
   computed: {
     ...mapState("userModule", { nama: "nama" }),
+    selectedItem() {
+      return this.items.findIndex((item) => item.text == this.$route.name);
+    },
   },
   methods: {
     logout() {

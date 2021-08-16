@@ -2,35 +2,43 @@ const express = require("express");
 const absenModel = require("../models/absen");
 const ruleModel = require("../models/rule");
 const userModel = require("../models/user");
+const izinModel = require("../models/izin");
+const cutiModel = require("../models/cuti");
 const router = express.Router();
 const auth = require("../middleware/auth");
 
 const moment = require("moment");
 
 // get all data absen
-router.get("/", async (req, res) => {
+router.get("/", auth, async (req, res) => {
   const tanggal = moment().format("DD-MM-YYYY");
-  const dataAbsen = await absenModel.find({ tanggal });
   const dataUser = await userModel.find({ role: "karyawan" }, "nama image");
+  const dataAbsen = await absenModel.find({ tanggal }, "-tanggal");
+  const dataIzin = await izinModel.find({ tanggal }, "user keterangan");
+  const dataCuti = await cutiModel.find(
+    { tanggal, diterima: true },
+    "user keterangan"
+  );
 
   const data = dataUser.map((v) => {
-    const absen = dataAbsen.find((o) => {
-      return o.user == v.id;
-    });
+    const absen = dataAbsen.find((o) => o.user == v.id);
+    const izin = dataIzin.find((o) => o.user == v.id);
+    const cuti = dataCuti.find((o) => o.user == v.id);
 
-    if (absen) return { ...v._doc, ...absen._doc };
-    return v;
+    let res = v._doc;
+
+    if (absen) res = { ...res, ...absen._doc };
+    if (izin) res = { ...res, izin: true, ...izin._doc };
+    if (cuti) res = { ...res, cuti: true, ...cuti._doc };
+
+    return res;
   });
-
-  // const group = await absenModel.aggregate([
-  //   { $group: { _id: "$user", users: { $push: "$$ROOT" } } },
-  // ]);
 
   res.send(data);
 });
 
 // get all data absen by user
-router.get("/:user", async (req, res) => {
+router.get("/:user", auth, async (req, res) => {
   const user = req.params.user;
 
   const { bulan, tahun } = req.query;
@@ -52,20 +60,43 @@ router.get("/:user", async (req, res) => {
 });
 
 // get data absen hari ini by user
-router.get("/hari/:user", async (req, res) => {
+router.get("/hari/:user", auth, async (req, res) => {
   const user = req.params.user;
   const tanggal = moment().format("DD-MM-YYYY");
 
   const absen = await absenModel.findOne({ user, tanggal });
+  const dataIzin = await izinModel
+    .findOne({ user, tanggal }, "user keterangan")
+    .countDocuments();
+  const dataCuti = await cutiModel
+    .findOne({ user, tanggal, diterima: true }, "user keterangan")
+    .countDocuments();
 
-  if (absen == null)
-    return res.send({
+  if (absen == null) {
+    const response = {
       tanggal,
-      infoAbsenDatang: "Anda belum melakukan absen",
+      infoAbsenDatang: "",
       infoAbsenPulang: "",
-    });
+    };
 
-  res.send(absen);
+    if (dataIzin > 0) {
+      response["izin"] = true;
+    } else if (dataCuti > 0) {
+      response["cuti"] = true;
+    } else {
+      res["infoAbsenDatang"] = "Anda belum melakukan absen";
+    }
+
+    return res.send(response);
+  }
+
+  const response = { ...absen._doc };
+
+  if (dataIzin > 0) {
+    response["izin"] = true;
+  }
+
+  res.send(response);
 });
 
 // save data absen datang

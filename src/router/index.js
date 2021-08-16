@@ -33,22 +33,37 @@ const routes = [
     children: [
       {
         path: "",
-        name: "Admin",
+        name: "Dashboard",
         component: () => import("../views/admin/dashboard.vue"),
       },
       {
         path: "karyawan",
-        name: "karyawan",
+        name: "Data Karyawan",
         component: () => import("../views/admin/karyawan.vue"),
       },
       {
         path: "absen",
-        name: "absen",
+        name: "Data Absen",
         component: () => import("../views/admin/absen.vue"),
       },
       {
+        path: "izin",
+        name: "Data Izin",
+        component: () => import("../views/admin/izin.vue"),
+      },
+      {
+        path: "cuti",
+        name: "Data Cuti",
+        component: () => import("../views/admin/cuti.vue"),
+      },
+      {
+        path: "laporan",
+        name: "Laporan",
+        component: () => import("../views/admin/laporan.vue"),
+      },
+      {
         path: "pengaturan",
-        name: "pengaturan",
+        name: "Pengaturan",
         component: () => import("../views/admin/pengaturan.vue"),
       },
     ],

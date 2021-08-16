@@ -1,7 +1,7 @@
 <template>
   <v-card elevation="2" class="cardRadius">
     <v-card-title>
-      <v-btn color="primary" @click.stop="$emit('tambah')">
+      <v-btn rounded color="primary" @click.stop="$emit('tambah')">
         <v-icon left> mdi-plus-circle </v-icon>
         Tambah Data
       </v-btn>
@@ -12,6 +12,9 @@
         label="Cari"
         single-line
         hide-details
+        dense
+        filled
+        rounded
       ></v-text-field>
     </v-card-title>
     <v-data-table
@@ -41,6 +44,7 @@
               class="mr-2"
               v-bind="attrs"
               v-on="on"
+              color="success"
               @click.stop="$emit('edit', item)"
             >
               mdi-pencil
@@ -55,6 +59,7 @@
               small
               v-bind="attrs"
               v-on="on"
+              color="primary"
               @click.stop="$emit('hapus', item)"
             >
               mdi-delete

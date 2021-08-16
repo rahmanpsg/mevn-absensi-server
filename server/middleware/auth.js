@@ -7,13 +7,15 @@ const verifyToken = (req, res, next) => {
     req.body.token || req.query.token || req.headers["x-access-token"];
 
   if (!token) {
-    return res.status(403).send("Token diperlukan untuk otentikasi");
+    return res
+      .status(403)
+      .send({ error: true, message: "Token diperlukan untuk otentikasi" });
   }
   try {
     const decoded = jwt.verify(token, config.TOKEN_KEY);
     req.user = decoded;
   } catch (err) {
-    return res.status(401).send("Token Tidak Valid");
+    return res.status(401).send({ error: true, message: "Token Tidak Valid" });
   }
   return next();
 };

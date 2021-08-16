@@ -6,6 +6,8 @@ const ls = new SecureLS({ isCompression: false });
 
 import userModule from "./user";
 import absenModule from "./absen";
+import cutiModule from "./cuti";
+import izinModule from "./izin";
 import karyawanModule from "./karyawan";
 import ruleModule from "./rule";
 import geolokasiModule from "./geolokasi";
@@ -16,6 +18,8 @@ export default new Vuex.Store({
   modules: {
     userModule,
     absenModule,
+    cutiModule,
+    izinModule,
     karyawanModule,
     ruleModule,
     geolokasiModule,

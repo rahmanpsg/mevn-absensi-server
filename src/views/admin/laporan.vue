@@ -1,20 +1,42 @@
 <template>
   <v-container>
     <v-row>
-      <v-col cols="12" class="py-0">
-        <h2 class="font-weight-light mb-0">Tabel Data Absen</h2>
-      </v-col>
       <v-col cols="12">
         <v-card elevation="3" class="cardRadius">
           <v-card-title>
             <v-col cols="12" sm="4" md="4">
               <v-autocomplete
+                v-model="selectedTahun"
+                :items="listTahun"
+                placeholder="Pilih Tahun"
+                @change="changeSelected('tahun')"
+                dense
+                filled
+                rounded
+              >
+              </v-autocomplete>
+            </v-col>
+            <v-col cols="6" sm="3" md="3">
+              <v-autocomplete
+                v-model="selectedBulan"
+                :items="listBulan"
+                placeholder="Pilih Bulan"
+                @change="changeSelected('bulan')"
+                dense
+                filled
+                rounded
+              >
+              </v-autocomplete>
+            </v-col>
+            <v-col cols="6" sm="3" md="3">
+              <v-autocomplete
                 v-model="selectedKaryawan"
                 :items="listKaryawan"
                 item-text="nama"
                 item-value="_id"
-                placeholder="Pilih Karyawan"
+                placeholder="Semua Karyawan"
                 @change="changeSelected('karyawan')"
+                clearable
                 dense
                 filled
                 rounded
@@ -39,30 +61,6 @@
                 </template>
               </v-autocomplete>
             </v-col>
-            <v-col cols="6" sm="3" md="3">
-              <v-autocomplete
-                v-model="selectedBulan"
-                :items="listBulan"
-                placeholder="Pilih Bulan"
-                @change="changeSelected('bulan')"
-                dense
-                filled
-                rounded
-              >
-              </v-autocomplete>
-            </v-col>
-            <v-col cols="6" sm="3" md="3">
-              <v-autocomplete
-                v-model="selectedTahun"
-                :items="listTahun"
-                placeholder="Pilih Tahun"
-                @change="changeSelected('tahun')"
-                dense
-                filled
-                rounded
-              >
-              </v-autocomplete>
-            </v-col>
             <v-col
               cols="12"
               sm="2"
@@ -72,20 +70,16 @@
               <v-btn
                 outlined
                 color="primary"
-                :disabled="!listAbsen.length"
+                :disabled="!cetak"
                 @click="dialog = !dialog"
               >
                 <v-icon left> mdi-printer </v-icon> Cetak
               </v-btn>
             </v-col>
           </v-card-title>
-          <table-absen
-            :headers="headers"
-            :items="listAbsen"
-            :loading="loading"
-          ></table-absen>
         </v-card>
       </v-col>
+      <v-col> </v-col>
       <dialog-cetak
         :id="selectedKaryawan"
         :bulan="selectedBulan"
@@ -99,38 +93,21 @@
 
 <script>
 import moment from "moment";
-import TableAbsen from "@/components/TableAbsen.vue";
 import DialogCetak from "@/components/DialogCetak.vue";
 import { mapState, mapActions } from "vuex";
 
 export default {
   components: {
-    TableAbsen,
     DialogCetak,
   },
   data() {
-    DialogCetak;
     return {
       loading: true,
       selectedKaryawan: null,
       selectedBulan: null,
       selectedTahun: null,
+      cetak: false,
       dialog: false,
-      headers: [
-        {
-          text: "#",
-          align: "center",
-          sortable: false,
-          value: "index",
-        },
-        { text: "Tanggal", value: "tanggal" },
-        {
-          text: "Jam Datang",
-          value: "waktuDatang",
-          align: "center",
-        },
-        { text: "Jam Pulang", value: "waktuPulang", align: "center" },
-      ],
       listBulan: [
         "Januari",
         "Februari",
@@ -148,13 +125,11 @@ export default {
     };
   },
   async created() {
-    await this.resetAbsens();
     await this.getAllKaryawan();
     this.loading = false;
   },
   computed: {
     ...mapState("absenModule", {
-      listAbsen: "absens",
       listKaryawan: "karyawans",
     }),
     listTahun() {
@@ -170,27 +145,16 @@ export default {
     },
   },
   methods: {
-    ...mapActions("absenModule", [
-      "getAllByKaryawan",
-      "getAllKaryawan",
-      "resetAbsens",
-    ]),
+    ...mapActions("absenModule", ["getAllKaryawan"]),
     async changeSelected(tipe) {
-      if (tipe == "karyawan") {
-        if (this.selectedBulan == null || this.selectedTahun == null) return;
-      } else if (tipe == "bulan") {
-        if (this.selectedKaryawan == null || this.selectedTahun == null) return;
+      this.cetak = false;
+      if (tipe == "bulan") {
+        if (this.selectedTahun == null) return;
       } else if (tipe == "tahun") {
-        if (this.selectedKaryawan == null || this.selectedBulan == null) return;
+        if (this.selectedBulan == null) return;
       }
 
-      this.loading = true;
-      await this.getAllByKaryawan({
-        _id: this.selectedKaryawan,
-        bulan: this.selectedBulan,
-        tahun: this.selectedTahun,
-      });
-      this.loading = false;
+      this.cetak = true;
     },
   },
 };

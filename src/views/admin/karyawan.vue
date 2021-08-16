@@ -2,7 +2,7 @@
   <v-container>
     <v-row>
       <v-col cols="12" class="py-0">
-        <h1 class="font-weight-light mb-0">Tabel Data Karyawan</h1>
+        <h2 class="font-weight-light mb-0">Tabel Data Karyawan</h2>
       </v-col>
       <v-col cols="12">
         <Table
@@ -19,6 +19,7 @@
           <template v-slot:modal>
             <DialogForm
               :dialog="dialog"
+              :loading="dialogLoading"
               :formTitle="formTitle"
               @closeDialog="closeDialog"
               @simpan="simpan"
@@ -105,9 +106,10 @@
               </template>
             </DialogForm>
 
-            <DialogDelete
-              :dialogDelete="dialogDelete"
-              @hapus="hapus"
+            <DialogCustom
+              :dialog="dialogDelete"
+              title="Anda yakin untuk menghapus data ini?"
+              @event="hapus"
               @closeDialog="closeDialog"
             />
           </template>
@@ -122,7 +124,7 @@
 <script>
 import Table from "@/components/Table.vue";
 import DialogForm from "@/components/DialogForm.vue";
-import DialogDelete from "@/components/DialogDelete.vue";
+import DialogCustom from "@/components/DialogCustom.vue";
 import SnackbarResponse from "@/components/SnackbarResponse.vue";
 import { mapState, mapActions } from "vuex";
 
@@ -132,7 +134,7 @@ export default {
   components: {
     Table,
     DialogForm,
-    DialogDelete,
+    DialogCustom,
     SnackbarResponse,
   },
   data() {
@@ -151,6 +153,7 @@ export default {
         { text: "Aksi", value: "aksi", sortable: false },
       ],
       dialog: false,
+      dialogLoading: false,
       dialogDelete: false,
       editedIndex: -1,
       editedItem: new KaryawanModel({}),
@@ -223,7 +226,6 @@ export default {
     tambah() {
       this.editedItem = new KaryawanModel({});
 
-      console.log(this.editedItem);
       this.dialog = true;
 
       this.$nextTick(() => {
@@ -239,8 +241,6 @@ export default {
     showDialogHapus(item) {
       this.editedIndex = this.items.indexOf(item);
       this.editedItem = new KaryawanModel(item);
-
-      console.log(item);
 
       this.dialogDelete = true;
     },
@@ -259,7 +259,7 @@ export default {
 
       if (!this.valid) return;
 
-      console.log(this.editedItem);
+      this.dialogLoading = true;
 
       let res;
       if (this.editedIndex > -1) {
@@ -277,6 +277,7 @@ export default {
     },
     closeDialog() {
       this.dialog = false;
+      this.dialogLoading = false;
       this.dialogDelete = false;
 
       this.$nextTick(() => {

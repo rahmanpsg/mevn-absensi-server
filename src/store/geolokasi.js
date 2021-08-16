@@ -5,6 +5,7 @@ export default {
   state: () => ({
     latitude: -4.0127511,
     longitude: 119.620638,
+    alamat: "",
     radius: 0,
   }),
   mutations: {
@@ -21,6 +22,7 @@ export default {
       try {
         state.latitude = data.lat;
         state.longitude = data.lng;
+        state.alamat = data.alamat;
       } catch (error) {
         console.log(error);
       }
