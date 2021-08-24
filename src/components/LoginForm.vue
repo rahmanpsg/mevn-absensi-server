@@ -81,7 +81,7 @@ export default {
 
       this.$store.commit("userModule/setData", res.data.user);
       this.$emit("setLoading", true);
-      this.alertRest.type = "secondary";
+      this.alertRest.type = "success";
 
       setTimeout(() => {
         this.$store.commit("userModule/isLogin", true);

@@ -15,6 +15,7 @@ export default {
       try {
         state.username = data.username;
         state.token = data.token;
+        axios.defaults.headers["x-access-token"] = data.token;
       } catch (error) {
         console.log(error);
       }
