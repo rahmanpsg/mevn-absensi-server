@@ -41,9 +41,9 @@ export default {
       return axios.defaults.baseURL || "";
     },
     cetakUrl() {
-      return `${this.baseUrl}cetak/${
-        this.id != null ? "karyawan/" + this.id : ""
-      }?bulan=${this.bulan}&tahun=${this.tahun}`;
+      return `${this.baseUrl}cetak/${this.id != null ? this.id : ""}?bulan=${
+        this.bulan
+      }&tahun=${this.tahun}`;
     },
   },
 };

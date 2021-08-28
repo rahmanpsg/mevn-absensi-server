@@ -110,6 +110,7 @@ export default {
     ],
   }),
   async created() {
+    await this.resetAbsens();
     this.loadData();
     await this.getAll();
     this.loading = false;
@@ -122,7 +123,7 @@ export default {
     },
   },
   methods: {
-    ...mapActions("absenModule", ["getAll"]),
+    ...mapActions("absenModule", ["getAll", "resetAbsens"]),
     async loadData() {
       const res = await axios("total");
 

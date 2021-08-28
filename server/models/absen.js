@@ -6,6 +6,7 @@ const schema = mongoose.Schema({
     ref: "User",
   },
   tanggal: String,
+  status: String,
   waktuDatang: String,
   waktuPulang: String,
   infoAbsenDatang: String,

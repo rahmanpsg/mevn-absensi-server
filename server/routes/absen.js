@@ -6,6 +6,7 @@ const izinModel = require("../models/izin");
 const cutiModel = require("../models/cuti");
 const router = express.Router();
 const auth = require("../middleware/auth");
+const getAbsens = require("../data/absen");
 
 const moment = require("moment");
 
@@ -37,26 +38,15 @@ router.get("/", auth, async (req, res) => {
   res.send(data);
 });
 
-// get all data absen by user
+// get all data absen/history by user
 router.get("/:user", auth, async (req, res) => {
-  const user = req.params.user;
+  try {
+    const { historiList, total } = await getAbsens(req, res);
 
-  const { bulan, tahun } = req.query;
-
-  const cbulan = convertBulan(bulan);
-
-  if (bulan == null || tahun == null)
-    return res.send({ error: true, message: "Parameter tidak lengkap" });
-
-  const data = await absenModel
-    .find({
-      user,
-      tanggal: { $regex: ".*" + `${cbulan}-${tahun}` },
-      waktuPulang: { $ne: null },
-    })
-    .sort("tanggal");
-
-  res.send(data);
+    res.send({ historiList, total });
+  } catch (error) {
+    console.log(error);
+  }
 });
 
 // get data absen hari ini by user
@@ -84,7 +74,7 @@ router.get("/hari/:user", auth, async (req, res) => {
     } else if (dataCuti > 0) {
       response["cuti"] = true;
     } else {
-      res["infoAbsenDatang"] = "Anda belum melakukan absen";
+      response["infoAbsenDatang"] = "Anda belum melakukan absen";
     }
 
     return res.send(response);
@@ -203,32 +193,35 @@ function cekWaktuAbsen(tipe, jamAbsen, jamRule) {
   const date1 = new Date(`${tanggal} ${jamAbsen}`);
   const date2 = new Date(`${tanggal} ${jamRule}:00`);
 
+  let totalSeconds = moment(date1).diff(moment(date2), "seconds");
+
+  const hours = Math.floor(totalSeconds / 3600);
+  totalSeconds %= 3600;
+  const minutes = Math.floor(totalSeconds / 60);
+
   if (tipe == "datang") {
-    const diff = date2 - date1;
+    let info = "Anda datang tepat waktu";
 
-    return diff < 0 ? "Anda datang terlambat" : "Anda datang tepat waktu";
+    if (hours > 0 || minutes >= 1) {
+      info =
+        "Anda datang terlambat " +
+        (hours > 0 ? `${hours} jam, ` : "") +
+        `${minutes} menit`;
+    }
+
+    return info;
   } else {
-    const diff = date1 - date2;
+    let info = "Anda pulang tepat waktu";
 
-    return diff < 0 ? "Anda pulang cepat" : "Anda pulang tepat waktu";
+    if (hours >= 1) {
+      info =
+        "Anda pulang lewat dari " +
+        (hours > 0 ? `${hours} jam, ` : "") +
+        `${minutes} menit`;
+    }
+
+    return info;
   }
-}
-
-function convertBulan(bulan) {
-  return {
-    Januari: 1,
-    Februari: 2,
-    Maret: 3,
-    April: 4,
-    Mei: 5,
-    Juni: 6,
-    Juli: 7,
-    Agustus: 8,
-    September: 9,
-    Oktober: 10,
-    November: 11,
-    Desember: 12,
-  }[bulan];
 }
 
 module.exports = router;

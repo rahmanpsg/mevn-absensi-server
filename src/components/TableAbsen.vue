@@ -3,7 +3,7 @@
     <v-data-table
       :headers="headers"
       :items="items"
-      :items-per-page="10"
+      :items-per-page="50"
       :loading="loading"
       class="elevation-0"
     >
@@ -33,17 +33,21 @@
           <h4 class="overline" v-html="item.izin ? 'Izin : ' : 'Cuti : '"></h4>
           <h4 class="overline" v-html="item.keterangan"></h4>
         </v-chip>
-        <v-chip v-else-if="value" :color="getColor(item.infoAbsenDatang)" dark>
-          <h4 class="overline" v-html="value"></h4>
+        <v-chip
+          v-else
+          :color="getColor(item.status, item.infoAbsenDatang)"
+          dark
+        >
+          <h4 class="overline" v-html="getValue(item.status, value)"></h4>
         </v-chip>
-        <h4 v-else class="overline">-</h4>
+        <!-- <h4 v-else class="overline">-</h4> -->
       </template>
 
       <template v-slot:[`item.waktuPulang`]="{ item, value }">
-        <v-chip v-if="value" :color="getColor(item.infoAbsenPulang)" dark>
-          <h4 class="overline" v-html="value"></h4>
+        <v-chip :color="getColor(item.status, item.infoAbsenPulang)" dark>
+          <h4 class="overline" v-html="getValue(item.status, value)"></h4>
         </v-chip>
-        <h4 v-else class="overline">-</h4>
+        <!-- <h4 v-else class="overline">-</h4> -->
       </template>
     </v-data-table>
   </v-col>
@@ -57,10 +61,32 @@ export default {
     loading: Boolean,
   },
   methods: {
-    getColor(info) {
-      if (info.includes("tepat")) return "success";
-      else if (info.includes("cepat") || info.includes("terlambat"))
-        return "warning";
+    getColor(status, info) {
+      if (status == undefined && info != undefined) {
+        if (info.includes("tepat") || info.includes("lewat")) return "success";
+        else if (info.includes("cepat") || info.includes("terlambat"))
+          return "warning";
+      } else if (status == "hadir") {
+        if (info.includes("terlambat")) return "warning";
+        return "success";
+      } else if (status == "alpa") {
+        if (!info.includes("tidak absen"))
+          if (info.includes("terlambat")) return "warning";
+          else return "success";
+        return "danger";
+      } else if (status == "izin") {
+        return "blue";
+      } else if (status == "izinPulang") {
+        if (info.includes("pulang")) return "blue";
+        else if (info.includes("terlambat")) return "warning";
+        return "success";
+      } else if (status == "cuti") return "orange";
+    },
+    getValue(status, value) {
+      if (value == undefined) return "-";
+      else if (status == "izin") return "IZIN";
+      else if (status == "cuti") return "CUTI";
+      return value;
     },
   },
 };

@@ -8,10 +8,13 @@ const absenModel = require("../models/absen");
 const ruleModel = require("../models/rule");
 const cutiModel = require("../models/cuti");
 const izinModel = require("../models/izin");
+const { convertBulan, convertHari } = require("../utils/convert");
+const getAbsens = require("../data/absen");
 
 // generete PDF
 router.get("/", async (req, res) => {
   const { bulan, tahun } = req.query;
+  const tanggal = moment().format("DD-MM-YYYY");
 
   const cbulan = convertBulan(bulan);
 
@@ -25,10 +28,9 @@ router.get("/", async (req, res) => {
 
   const listAbsen = await absenModel.find(
     {
-      tanggal: { $regex: ".*" + `${cbulan}-${tahun}` },
-      waktuPulang: { $ne: null },
+      tanggal: { $regex: ".*" + `${cbulan}-${tahun}`, $lte: tanggal },
     },
-    "user"
+    "-infoAbsenDatang -infoAbsenPulang"
   );
   // .aggregate([
   //   // { $match: { tanggal: { $regex: ".*" + `${cbulan}-${tahun}` } } },
@@ -40,42 +42,69 @@ router.get("/", async (req, res) => {
   // const totalHari = new Date(tahun, cbulan, 0).getDate();
   // const totalHari = moment(`${tahun}-${cbulan}`, "YYYY-MM").daysInMonth();
 
-  moment.locale("id");
-
   const totalHariKerja = Array.from(
     { length: moment(`${tahun}-${cbulan}`).daysInMonth() },
     (x, i) =>
       moment(`${tahun}-${cbulan}`)
         .startOf("month")
-        .add(i + 1, "days")
-        .format("dddd")
-  ).filter((v) => hariLibur.find((o) => convertHari(o.hari) != v)).length;
+        .add(i, "days")
+        .format("YYYY-MM-DD dddd")
+  )
+    .filter((v) =>
+      hariLibur.find((o) => convertHari(o.hari) != v.split(" ")[1])
+    )
+    .filter((v) => moment(v.split(" ")[0]).isBefore(moment(new Date()))).length;
 
   const dataAbsen = await Promise.all(
     listKaryawan.map(async (karyawan) => {
       try {
+        const dataIzin = await izinModel.find(
+          {
+            user: karyawan.id,
+            tanggal: { $regex: ".*" + `${cbulan}-${tahun}` },
+          },
+          "tanggal"
+        );
+
+        let izinHadir = 0;
+
         const totalHadir = listAbsen
-          .map((absen) => absen.user == karyawan.id)
+          .map((absen) => {
+            if (absen.user == karyawan.id) {
+              if (dataIzin.some((izin) => izin.tanggal == absen.tanggal)) {
+                if (absen.waktuDatang != null) {
+                  izinHadir++;
+                  return true;
+                }
+                return true;
+              }
+              if (absen.waktuPulang == null) return false;
+              return true;
+            }
+          })
           .filter(Boolean).length;
 
         const totalCuti = await cutiModel
           .find({
             user: karyawan.id,
-            tanggal: { $regex: ".*" + `${cbulan}-${tahun}` },
+            tanggal: { $regex: ".*" + `${cbulan}-${tahun}`, $lte: tanggal },
             diterima: true,
           })
           .countDocuments();
 
-        const totalIzin = await izinModel
-          .find({
-            user: karyawan.id,
-            tanggal: { $regex: ".*" + `${cbulan}-${tahun}` },
-          })
-          .countDocuments();
+        const totalIzin = dataIzin.length;
+
+        // const totalIzin = await izinModel
+        //   .find({
+        //     user: karyawan.id,
+        //     tanggal: { $regex: ".*" + `${cbulan}-${tahun}` },
+        //   })
+        //   .countDocuments();
 
         // const tanggalMasuk = moment(karyawan.createdAt).format("D");
 
-        const totalAlpa = totalHariKerja - totalHadir - totalCuti - totalIzin;
+        const totalAlpa =
+          totalHariKerja - totalHadir - totalCuti - (totalIzin - izinHadir);
 
         return {
           ...karyawan._doc,
@@ -148,7 +177,7 @@ router.get("/", async (req, res) => {
       tb.addHeader();
     });
 
-  const dataTableMhs = dataAbsen.map((v, i) => {
+  const dataTable = dataAbsen.map((v, i) => {
     return {
       no: i + 1,
       nama: v.nama,
@@ -159,7 +188,7 @@ router.get("/", async (req, res) => {
     };
   });
 
-  if (dataTableMhs.length > 0) table.addBody(dataTableMhs);
+  if (dataTable.length > 0) table.addBody(dataTable);
   else {
     doc.moveDown();
     doc.moveDown();
@@ -175,95 +204,130 @@ router.get("/", async (req, res) => {
   doc.end();
 });
 
-router.get("/karyawan/:user", async (req, res) => {
+router.get("/:user", async (req, res) => {
   const user = req.params.user;
 
   const { bulan, tahun } = req.query;
 
-  const cbulan = convertBulan(bulan);
+  // const cbulan = convertBulan(bulan);
 
-  if (bulan == null || tahun == null)
-    return res.send({ error: true, message: "Parameter tidak lengkap" });
+  // if (bulan == null || tahun == null)
+  //   return res.send({ error: true, message: "Parameter tidak lengkap" });
 
   const dataKaryawan = await userModel.findOne({ _id: user });
 
-  const dataAbsen = await absenModel
-    .find({
-      user,
-      tanggal: { $regex: ".*" + `${cbulan}-${tahun}` },
-      waktuPulang: { $ne: null },
-    })
-    .sort("tanggal");
+  // const dataAbsen = await absenModel
+  //   .find({
+  //     user,
+  //     tanggal: { $regex: ".*" + `${cbulan}-${tahun}` },
+  //     waktuPulang: { $ne: null },
+  //   })
+  //   .sort("tanggal");
 
-  let doc = new PDFDocument({
-    size: "LEGAL",
-    margins: { top: 10, left: 30, right: 30, bottom: 10 },
-  });
+  try {
+    const { historiList, total } = await getAbsens(req, res, false);
 
-  let table = new PdfTable(doc, {
-    bottomMargin: 30,
-  });
-
-  createHeaderPDF(res, doc, bulan, tahun);
-
-  const opt = { continued: true };
-
-  doc.moveDown();
-  doc.moveDown();
-  doc.text("Nama", 30, doc.y, opt);
-  doc.text(`: ${dataKaryawan.nama}`, doc.x + 28, doc.y);
-  doc.text("NIK", 30, doc.y, opt);
-  doc.text(`: ${dataKaryawan.nik}`, doc.x + 42);
-
-  doc.moveDown();
-
-  table
-    .setColumnsDefaults({
-      headerBorder: ["L", "T", "B", "R"],
-      border: ["L", "T", "B", "R"],
-      headerPadding: [10, 0, 5, 5],
-      padding: [5, 0, 0, 0],
-      align: "center",
-    })
-    .addColumns([
-      {
-        id: "no",
-        header: "No",
-        width: 50,
-      },
-      {
-        id: "tanggal",
-        header: "Tanggal",
-        width: 200,
-      },
-      {
-        id: "waktuDatang",
-        header: "Jam Datang",
-        width: 150,
-      },
-      {
-        id: "waktuPulang",
-        header: "Jam Pulang",
-        width: 150,
-      },
-    ])
-    .onPageAdded(function (tb) {
-      tb.addHeader();
+    let doc = new PDFDocument({
+      size: "LEGAL",
+      margins: { top: 10, left: 30, right: 30, bottom: 10 },
     });
 
-  const dataTableMhs = dataAbsen.map((v, i) => {
-    return {
-      no: i + 1,
-      tanggal: v.tanggal,
-      waktuDatang: v.waktuDatang,
-      waktuPulang: v.waktuPulang,
-    };
-  });
+    let table = new PdfTable(doc, {
+      bottomMargin: 30,
+    });
 
-  table.addBody(dataTableMhs);
+    createHeaderPDF(res, doc, bulan, tahun);
 
-  // Finalize PDF file
-  doc.end();
+    const opt = { continued: true };
+
+    doc.moveDown();
+    doc.moveDown();
+    doc.text("Nama", 30, doc.y, opt);
+    doc.text(`: ${dataKaryawan.nama}`, doc.x + 28, doc.y);
+    doc.text("NIK", 30, doc.y, opt);
+    doc.text(`: ${dataKaryawan.nik}`, doc.x + 42, doc.y);
+    if (historiList.length > 0) {
+      doc.text("Hadir", 30, doc.y, opt);
+      doc.text(`: ${total.hadir}`, doc.x + 32, doc.y);
+      doc.text("Alpa", 30, doc.y, opt);
+      doc.text(`: ${total.alpa}`, doc.x + 37, doc.y);
+      doc.text("Izin", 30, doc.y, opt);
+      doc.text(`: ${total.izin}`, doc.x + 43, doc.y);
+      doc.text("Cuti", 30, doc.y, opt);
+      doc.text(`: ${total.cuti}`, doc.x + 40, doc.y);
+    }
+    doc.moveDown();
+
+    table
+      .setColumnsDefaults({
+        headerBorder: ["L", "T", "B", "R"],
+        border: ["L", "T", "B", "R"],
+        headerPadding: [10, 0, 5, 5],
+        padding: [5, 0, 0, 0],
+        align: "center",
+      })
+      .addColumns([
+        {
+          id: "no",
+          header: "No",
+          width: 50,
+        },
+        {
+          id: "tanggal",
+          header: "Tanggal",
+          width: 200,
+        },
+        {
+          id: "waktuDatang",
+          header: "Jam Datang",
+          width: 150,
+        },
+        {
+          id: "waktuPulang",
+          header: "Jam Pulang",
+          width: 150,
+        },
+      ])
+      .onPageAdded(function (tb) {
+        tb.addHeader();
+      });
+
+    const dataTable = historiList.map((v, i) => {
+      return {
+        no: i + 1,
+        tanggal: v.tanggal,
+        waktuDatang:
+          v.status == "izin"
+            ? "Izin"
+            : v.status == "cuti"
+            ? "Cuti"
+            : v.waktuDatang,
+        waktuPulang:
+          v.status == "izin"
+            ? "Izin"
+            : v.status == "cuti"
+            ? "Cuti"
+            : v.waktuPulang,
+      };
+    });
+
+    if (historiList.length > 0) table.addBody(dataTable);
+    else {
+      doc.moveDown();
+      doc.moveDown();
+      doc.moveDown();
+      doc.fontSize(14).text(`Tidak ada data`, {
+        underline: true,
+        width: 530,
+        align: "center",
+      });
+    }
+
+    // Finalize PDF file
+    doc.end();
+  } catch (error) {
+    console.log(error);
+  }
 });
 
 function createHeaderPDF(res, doc, bulan, tahun) {
@@ -290,24 +354,4 @@ function createHeaderPDF(res, doc, bulan, tahun) {
   doc.font("Helvetica");
 }
 
-function convertBulan(bulan) {
-  return {
-    Januari: 1,
-    Februari: 2,
-    Maret: 3,
-    April: 4,
-    Mei: 5,
-    Juni: 6,
-    Juli: 7,
-    Agustus: 8,
-    September: 9,
-    Oktober: 10,
-    November: 11,
-    Desember: 12,
-  }[bulan];
-}
-
-function convertHari(hari) {
-  return ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabut"][hari];
-}
 module.exports = router;

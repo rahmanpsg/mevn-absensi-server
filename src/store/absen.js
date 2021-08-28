@@ -34,7 +34,7 @@ export default {
         const { data } = await axios.get(
           `absen/${_id}?bulan=${bulan}&tahun=${tahun}`
         );
-        commit("setAbsens", data);
+        commit("setAbsens", data.historiList);
       } catch (error) {
         console.log(error);
         return error.response;
