@@ -55,6 +55,10 @@ router.get("/hari/:user", auth, async (req, res) => {
   const tanggal = moment().format("DD-MM-YYYY");
 
   const absen = await absenModel.findOne({ user, tanggal });
+
+  const hari = new Date().getDay();
+  const dataRule = await ruleModel.findOne({ hari }).select("libur");
+
   const dataIzin = await izinModel
     .findOne({ user, tanggal }, "user keterangan")
     .countDocuments();
@@ -73,7 +77,7 @@ router.get("/hari/:user", auth, async (req, res) => {
       response["izin"] = true;
     } else if (dataCuti > 0) {
       response["cuti"] = true;
-    } else {
+    } else if (!dataRule.libur) {
       response["infoAbsenDatang"] = "Anda belum melakukan absen";
     }
 
