@@ -50,7 +50,8 @@ module.exports = async function (req, res, sort = true) {
     )
     .sort({ tanggal: "DESC" });
 
-  if (!dataAbsen.length) return { historiList: dataAbsen };
+  if (!dataAbsen.length && !checkIfIsMonth(parseInt(cbulan), tahun))
+    return { historiList: dataAbsen };
 
   const dataIzin = await izinModel.find(
     { user, tanggal: { $regex: ".*" + `${cbulan}-${tahun}` } },
