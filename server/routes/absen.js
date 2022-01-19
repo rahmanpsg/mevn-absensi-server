@@ -7,6 +7,7 @@ const cutiModel = require("../models/cuti");
 const router = express.Router();
 const auth = require("../middleware/auth");
 const getAbsens = require("../data/absen");
+const { cekWaktuAbsen } = require("../utils/absen");
 
 const moment = require("moment");
 
@@ -191,41 +192,5 @@ router.post("/pulang/:user", auth, async (req, res) => {
     });
   }
 });
-
-function cekWaktuAbsen(tipe, jamAbsen, jamRule) {
-  const tanggal = moment().format("MM/DD/YYYY");
-  const date1 = new Date(`${tanggal} ${jamAbsen}`);
-  const date2 = new Date(`${tanggal} ${jamRule}:00`);
-
-  let totalSeconds = moment(date1).diff(moment(date2), "seconds");
-
-  const hours = Math.floor(totalSeconds / 3600);
-  totalSeconds %= 3600;
-  const minutes = Math.floor(totalSeconds / 60);
-
-  if (tipe == "datang") {
-    let info = "Anda datang tepat waktu";
-
-    if (hours > 0 || minutes >= 1) {
-      info =
-        "Anda datang terlambat " +
-        (hours > 0 ? `${hours} jam, ` : "") +
-        `${minutes} menit`;
-    }
-
-    return info;
-  } else {
-    let info = "Anda pulang tepat waktu";
-
-    if (hours >= 1) {
-      info =
-        "Anda pulang lewat dari " +
-        (hours > 0 ? `${hours} jam, ` : "") +
-        `${minutes} menit`;
-    }
-
-    return info;
-  }
-}
 
 module.exports = router;

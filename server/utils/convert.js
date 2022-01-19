@@ -1,17 +1,17 @@
 function convertBulan(bulan) {
   return {
-    Januari: 1,
-    Februari: 2,
-    Maret: 3,
-    April: 4,
-    Mei: 5,
-    Juni: 6,
-    Juli: 7,
-    Agustus: 8,
-    September: 9,
-    Oktober: 10,
-    November: 11,
-    Desember: 12,
+    Januari: "01",
+    Februari: "02",
+    Maret: "03",
+    April: "04",
+    Mei: "05",
+    Juni: "06",
+    Juli: "07",
+    Agustus: "08",
+    September: "09",
+    Oktober: "10",
+    November: "11",
+    Desember: "12",
   }[bulan];
 }
 

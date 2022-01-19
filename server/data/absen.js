@@ -29,13 +29,21 @@ module.exports = async function (req, res, sort = true) {
     .filter((v) =>
       hariLibur.find((o) => convertHari(o.hari) != v.split("-")[1])
     )
-    .map((v) => `${v.split("-")[0]}-0${cbulan}-${tahun}`);
+    .map((v) => `${v.split("-")[0]}-${cbulan}-${tahun}`);
+
+  // Periksa jika data adalah bulan yang berjalan
+  const checkIfIsMonth = (bulan, tahun) => {
+    return bulan == moment().month() + 1 && tahun == moment().year();
+  };
 
   const dataAbsen = await absenModel
     .find(
       {
         user,
-        tanggal: { $regex: ".*" + `${cbulan}-${tahun}`, $lte: tanggal },
+        tanggal: {
+          $regex: ".*" + `${cbulan}-${tahun}`,
+          $lte: checkIfIsMonth(parseInt(cbulan), tahun) ? tanggal : "32",
+        },
         // waktuPulang: { $ne: null },
       },
       "-user"
