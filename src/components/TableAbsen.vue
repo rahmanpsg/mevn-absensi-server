@@ -11,14 +11,11 @@
         {{ index + 1 }}
       </template>
 
-      <template v-slot:[`item.nama`]="{ item }">
+      <template v-slot:[`item.nama`]="{ item, index }">
         <v-row align="center" class="spacer py-3" no-gutters>
           <v-col cols="12" sm="2" md="2">
             <v-avatar>
-              <img
-                v-if="item.image"
-                :src="`data:image/jpeg;base64,${item.image}`"
-              />
+              <img v-if="item.image" :src="imageSrc[index]" />
               <img v-else src="@/assets/user.png" />
             </v-avatar>
           </v-col>
@@ -59,6 +56,21 @@ export default {
     headers: Array,
     items: Array,
     loading: Boolean,
+  },
+  computed: {
+    imageSrc() {
+      return this.items.map((item) => {
+        if (!item.image) return;
+        if (
+          item.image.startsWith("https://") ||
+          item.image.startsWith("http://")
+        ) {
+          return item.image;
+        }
+
+        return `data:image/jpeg;base64,${item.image}`;
+      });
+    },
   },
   methods: {
     getColor(status, info) {

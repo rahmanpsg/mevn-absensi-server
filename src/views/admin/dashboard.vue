@@ -110,9 +110,9 @@ export default {
     ],
   }),
   async created() {
-    await this.resetAbsens();
+    // await this.resetAbsens();
     this.loadData();
-    await this.getAll();
+    if (!this.listAbsen.length) await this.getAll({ lokasi: false });
     this.loading = false;
   },
   computed: {

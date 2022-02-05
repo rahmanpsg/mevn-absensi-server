@@ -134,7 +134,7 @@ export default {
     };
   },
   async created() {
-    await this.getAll();
+    if (!this.rules.length) await this.getAll();
   },
   computed: {
     ...mapState("ruleModule", ["rules"]),

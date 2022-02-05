@@ -11,6 +11,7 @@ const schema = mongoose.Schema({
   waktuPulang: String,
   infoAbsenDatang: String,
   infoAbsenPulang: String,
+  lokasi: [{ latitude: Number, longitude: Number, waktu: String }],
 });
 
 module.exports = mongoose.model("Absen", schema);

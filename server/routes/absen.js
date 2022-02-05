@@ -13,9 +13,10 @@ const moment = require("moment");
 
 // get all data absen
 router.get("/", auth, async (req, res) => {
+  const { select } = req.query;
   const tanggal = moment().format("DD-MM-YYYY");
   const dataUser = await userModel.find({ role: "karyawan" }, "nama image");
-  const dataAbsen = await absenModel.find({ tanggal }, "-tanggal");
+  const dataAbsen = await absenModel.find({ tanggal }, `-tanggal ${select}`);
   const dataIzin = await izinModel.find({ tanggal }, "user keterangan");
   const dataCuti = await cutiModel.find(
     { tanggal, diterima: true },

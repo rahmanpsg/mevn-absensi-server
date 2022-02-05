@@ -89,6 +89,11 @@ export default {
           icon: "mdi-calendar-month",
         },
         {
+          text: "Monitoring",
+          href: "/admin/monitoring",
+          icon: "mdi-map-marker-radius",
+        },
+        {
           text: "Laporan",
           href: "/admin/laporan",
           icon: "mdi-printer",

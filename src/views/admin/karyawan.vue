@@ -96,10 +96,7 @@
                           <v-icon right> mdi-delete </v-icon>
                         </v-btn>
                       </div>
-                      <v-img
-                        :src="`data:image/jpeg;base64,${editedItem.image}`"
-                        aspect-ratio="1.1"
-                      ></v-img>
+                      <v-img :src="imageSrc" aspect-ratio="1.1"></v-img>
                     </v-col>
                   </v-row>
                 </v-form>
@@ -163,7 +160,7 @@ export default {
     };
   },
   async created() {
-    await this.getAll();
+    if (!this.items.length) await this.getAll();
     this.loading = false;
   },
   computed: {
@@ -200,6 +197,16 @@ export default {
           );
         },
       ];
+    },
+    imageSrc() {
+      if (
+        this.editedItem.image.startsWith("https://") ||
+        this.editedItem.image.startsWith("http://")
+      ) {
+        return this.editedItem.image;
+      }
+
+      return `data:image/jpeg;base64,${this.editedItem.image}`;
     },
   },
   methods: {

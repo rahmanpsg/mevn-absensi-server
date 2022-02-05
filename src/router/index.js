@@ -57,6 +57,11 @@ const routes = [
         component: () => import("../views/admin/cuti.vue"),
       },
       {
+        path: "monitoring",
+        name: "Monitoring",
+        component: () => import("../views/admin/monitoring.vue"),
+      },
+      {
         path: "laporan",
         name: "Laporan",
         component: () => import("../views/admin/laporan.vue"),

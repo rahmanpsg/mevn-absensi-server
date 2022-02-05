@@ -71,7 +71,7 @@
                 background-color: #fbaccc;
                 color: white;
                 position: absolute;
-                z-index: 100;
+                z-index: 1;
               "
             >
               {{ infoContent }}
@@ -101,7 +101,7 @@ export default {
     };
   },
   async created() {
-    await this.getData();
+    if (this.radius == 0) await this.getData();
   },
   computed: {
     ...mapState("geolokasiModule", [
@@ -115,9 +115,25 @@ export default {
     },
     infoOptions() {
       return {
-        content: `${this.alamat ? this.alamat + `<br><br>` : ``}Latitude : ${
-          this.latitude
-        } <br>Longitude : ${this.longitude}`,
+        content: `<table>
+                    ${
+                      this.alamat
+                        ? "<thead class='overline'><tr><th colspan='2'>" +
+                          this.alamat +
+                          `</th></tr></thead>`
+                        : ``
+                    }
+                    <tbody class='caption'>
+                      <tr>
+                        <td width='70px'>Latitude</td>
+                        <td> : ${this.latitude}</td>
+                      </tr>
+                      <tr>
+                        <td>Longitude</td>
+                        <td>: ${this.longitude}</td>
+                      </tr>
+                    </tbody>
+                  </table>`,
         pixelOffset: {
           width: 0,
           height: -35,

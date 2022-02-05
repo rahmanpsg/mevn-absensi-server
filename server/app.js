@@ -1,5 +1,6 @@
 require("dotenv").config();
 require("./config/database").connect();
+require("./config/cloudinary");
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");

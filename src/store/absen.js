@@ -4,26 +4,32 @@ export default {
   namespaced: true,
   state: () => ({
     absens: [],
+    absensKaryawan: [],
     karyawans: [],
   }),
   mutations: {
     setAbsens(state, absens) {
       state.absens = absens;
     },
-    resetAbsens(state) {
-      state.absens = [];
+    setAbsensKaryawan(state, absensKaryawan) {
+      state.absensKaryawan = absensKaryawan;
+    },
+    resetAbsensKaryawan(state) {
+      state.absensKaryawan = [];
     },
     setKaryawans(state, karyawans) {
       state.karyawans = karyawans;
     },
   },
   actions: {
-    resetAbsens({ commit }) {
-      commit("resetAbsens");
+    resetAbsensKaryawan({ commit }) {
+      commit("resetAbsensKaryawan");
     },
-    async getAll({ commit }) {
+    async getAll({ commit }, { lokasi }) {
       try {
-        const { data } = await axios.get(`absen`);
+        const { data } = await axios.get(
+          `absen?select=${lokasi == false ? "-lokasi" : ""}`
+        );
         commit("setAbsens", data);
       } catch (error) {
         return error.response;
@@ -34,7 +40,7 @@ export default {
         const { data } = await axios.get(
           `absen/${_id}?bulan=${bulan}&tahun=${tahun}`
         );
-        commit("setAbsens", data.historiList);
+        commit("setAbsensKaryawan", data.historiList);
       } catch (error) {
         console.log(error);
         return error.response;

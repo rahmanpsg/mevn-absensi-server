@@ -148,13 +148,15 @@ export default {
     };
   },
   async created() {
-    await this.resetAbsens();
-    await this.getAllKaryawan();
+    await this.resetAbsensKaryawan();
+    if (!this.listKaryawan.length) await this.getAllKaryawan();
     this.loading = false;
   },
   computed: {
     ...mapState("absenModule", {
-      listAbsen: "absens",
+      listAbsen: "absensKaryawan",
+    }),
+    ...mapState("karyawanModule", {
       listKaryawan: "karyawans",
     }),
     listTahun() {
@@ -173,8 +175,11 @@ export default {
     ...mapActions("absenModule", [
       "getAllByKaryawan",
       "getAllKaryawan",
-      "resetAbsens",
+      "resetAbsensKaryawan",
     ]),
+    ...mapActions("karyawanModule", {
+      getAllKaryawan: "getAll",
+    }),
     async changeSelected(tipe) {
       if (tipe == "karyawan") {
         if (this.selectedBulan == null || this.selectedTahun == null) return;

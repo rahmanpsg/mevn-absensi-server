@@ -125,11 +125,11 @@ export default {
     };
   },
   async created() {
-    await this.getAllKaryawan();
+    if (!this.listKaryawan.length) await this.getAll();
     this.loading = false;
   },
   computed: {
-    ...mapState("absenModule", {
+    ...mapState("karyawanModule", {
       listKaryawan: "karyawans",
     }),
     listTahun() {
@@ -145,7 +145,7 @@ export default {
     },
   },
   methods: {
-    ...mapActions("absenModule", ["getAllKaryawan"]),
+    ...mapActions("karyawanModule", ["getAll"]),
     async changeSelected(tipe) {
       this.cetak = false;
       if (tipe == "bulan") {
