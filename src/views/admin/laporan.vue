@@ -48,7 +48,7 @@
                   >
                     <img
                       v-if="item.image"
-                      :src="`data:image/jpeg;base64,${item.image}`"
+                      :src="imageSrc[listKaryawan.indexOf(item)]"
                     />
                     <img v-else src="@/assets/user.png" />
                   </v-list-item-avatar>
@@ -142,6 +142,19 @@ export default {
       }
 
       return list;
+    },
+    imageSrc() {
+      return this.listKaryawan.map((item) => {
+        if (!item.image) return;
+        if (
+          item.image.startsWith("https://") ||
+          item.image.startsWith("http://")
+        ) {
+          return item.image;
+        }
+
+        return `data:image/jpeg;base64,${item.image}`;
+      });
     },
   },
   methods: {

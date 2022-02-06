@@ -8,7 +8,9 @@ const absenModel = require("../models/absen");
 const ruleModel = require("../models/rule");
 const cutiModel = require("../models/cuti");
 const izinModel = require("../models/izin");
+const geolocationModel = require("../models/geolocation");
 const { convertBulan, convertHari } = require("../utils/convert");
+const { distance } = require("../utils/geolocation");
 const getAbsens = require("../data/absen");
 
 // generete PDF
@@ -26,21 +28,22 @@ router.get("/", async (req, res) => {
     "nama createdAt"
   );
 
+  // Periksa jika data adalah bulan yang berjalan
+  const checkIfIsMonth = (bulan, tahun) => {
+    return bulan == moment().month() + 1 && tahun == moment().year();
+  };
+
   const listAbsen = await absenModel.find(
     {
-      tanggal: { $regex: ".*" + `${cbulan}-${tahun}`, $lte: tanggal },
+      tanggal: {
+        $regex: ".*" + `${cbulan}-${tahun}`,
+        $lte: checkIfIsMonth(parseInt(cbulan), tahun) ? tanggal : "32",
+      },
     },
     "-infoAbsenDatang -infoAbsenPulang"
   );
-  // .aggregate([
-  //   // { $match: { tanggal: { $regex: ".*" + `${cbulan}-${tahun}` } } },
-  //   { $group: { _id: "$user", users: { $push: "$$ROOT" } } },
-  // ]);
 
   const hariLibur = await ruleModel.find({ libur: true }, "hari");
-
-  // const totalHari = new Date(tahun, cbulan, 0).getDate();
-  // const totalHari = moment(`${tahun}-${cbulan}`, "YYYY-MM").daysInMonth();
 
   const totalHariKerja = Array.from(
     { length: moment(`${tahun}-${cbulan}`).daysInMonth() },
@@ -69,18 +72,17 @@ router.get("/", async (req, res) => {
         let izinHadir = 0;
 
         const totalHadir = listAbsen
+          .filter((absen) => absen.user == karyawan.id)
           .map((absen) => {
-            if (absen.user == karyawan.id) {
-              if (dataIzin.some((izin) => izin.tanggal == absen.tanggal)) {
-                if (absen.waktuDatang != null) {
-                  izinHadir++;
-                  return true;
-                }
+            if (dataIzin.some((izin) => izin.tanggal == absen.tanggal)) {
+              if (absen.waktuDatang != null) {
+                izinHadir++;
                 return true;
               }
-              if (absen.waktuPulang == null) return false;
               return true;
             }
+            if (absen.waktuPulang == null) return false;
+            return true;
           })
           .filter(Boolean).length;
 
@@ -93,15 +95,6 @@ router.get("/", async (req, res) => {
           .countDocuments();
 
         const totalIzin = dataIzin.length;
-
-        // const totalIzin = await izinModel
-        //   .find({
-        //     user: karyawan.id,
-        //     tanggal: { $regex: ".*" + `${cbulan}-${tahun}` },
-        //   })
-        //   .countDocuments();
-
-        // const tanggalMasuk = moment(karyawan.createdAt).format("D");
 
         const totalAlpa =
           totalHariKerja - totalHadir - totalCuti - (totalIzin - izinHadir);
@@ -120,8 +113,8 @@ router.get("/", async (req, res) => {
   );
 
   let doc = new PDFDocument({
-    size: "LEGAL",
-    margins: { top: 10, left: 30, right: 30, bottom: 10 },
+    size: "A4",
+    margins: { top: 10, left: 23, right: 30, bottom: 10 },
   });
 
   let table = new PdfTable(doc, {
@@ -177,28 +170,38 @@ router.get("/", async (req, res) => {
       tb.addHeader();
     });
 
-  const dataTable = dataAbsen.map((v, i) => {
+  const dataTable = dataAbsen.map((absen, i) => {
     return {
       no: i + 1,
-      nama: v.nama,
-      hadir: v.hadir,
-      alpa: v.alpa,
-      izin: v.izin,
-      cuti: v.cuti,
+      nama: absen.nama,
+      hadir: absen.hadir,
+      alpa: absen.alpa,
+      izin: absen.izin,
+      cuti: absen.cuti,
     };
   });
 
-  if (dataTable.length > 0) table.addBody(dataTable);
-  else {
-    doc.moveDown();
-    doc.moveDown();
-    doc.moveDown();
+  if (dataTable.length == 0) {
+    doc.moveDown(3);
     doc.fontSize(14).text(`Tidak ada data`, {
       underline: true,
       width: 310,
       align: "center",
     });
+    doc.end();
+    return;
+  } else {
+    if (checkIfIsMonth(parseInt(cbulan), tahun)) {
+      doc.x = 30;
+      doc.text("KETERANGAN : DATA ABSENSI BELUM LENGKAP", {
+        align: "left",
+      });
+    }
   }
+
+  table.addBody(dataTable);
+
+  createTTD(doc);
 
   // Finalize PDF file
   doc.end();
@@ -209,20 +212,9 @@ router.get("/:user", async (req, res) => {
 
   const { bulan, tahun } = req.query;
 
-  // const cbulan = convertBulan(bulan);
-
-  // if (bulan == null || tahun == null)
-  //   return res.send({ error: true, message: "Parameter tidak lengkap" });
-
   const dataKaryawan = await userModel.findOne({ _id: user });
 
-  // const dataAbsen = await absenModel
-  //   .find({
-  //     user,
-  //     tanggal: { $regex: ".*" + `${cbulan}-${tahun}` },
-  //     waktuPulang: { $ne: null },
-  //   })
-  //   .sort("tanggal");
+  const dataGeolocation = await geolocationModel.findOne();
 
   try {
     const { historiList, total } = await getAbsens(req, res, false);
@@ -232,30 +224,44 @@ router.get("/:user", async (req, res) => {
       margins: { top: 10, left: 30, right: 30, bottom: 10 },
     });
 
+    let tableHeader = new PdfTable(doc, {
+      bottomMargin: 30,
+    });
+
     let table = new PdfTable(doc, {
       bottomMargin: 30,
     });
 
     createHeaderPDF(res, doc, bulan, tahun);
 
-    const opt = { continued: true };
+    tableHeader.addColumns([{ id: "jenis", width: 105 }, { id: "teks" }]);
 
-    doc.moveDown();
-    doc.moveDown();
-    doc.text("Nama", 30, doc.y, opt);
-    doc.text(`: ${dataKaryawan.nama}`, doc.x + 28, doc.y);
-    doc.text("NIK", 30, doc.y, opt);
-    doc.text(`: ${dataKaryawan.nik}`, doc.x + 42, doc.y);
+    let listJenis = ["NAMA", "NIK"];
+    let listTeks = [dataKaryawan.nama.toUpperCase(), dataKaryawan.nik];
+
     if (historiList.length > 0) {
-      doc.text("Hadir", 30, doc.y, opt);
-      doc.text(`: ${total.hadir}`, doc.x + 32, doc.y);
-      doc.text("Alpa", 30, doc.y, opt);
-      doc.text(`: ${total.alpa}`, doc.x + 37, doc.y);
-      doc.text("Izin", 30, doc.y, opt);
-      doc.text(`: ${total.izin}`, doc.x + 43, doc.y);
-      doc.text("Cuti", 30, doc.y, opt);
-      doc.text(`: ${total.cuti}`, doc.x + 40, doc.y);
+      listJenis = [...listJenis, "HADIR", "ALPA", "IZIN", "CUTI"];
+      listTeks = [...listTeks, total.hadir, total.alpa, total.izin, total.cuti];
+
+      if (
+        moment(historiList[0].tanggal, "DD-MM-YYYY").endOf("month") > moment()
+      ) {
+        listTeks.push("DATA ABSENSI TIDAK LENGKAP");
+      } else {
+        listTeks.push("DATA ABSENSI LENGKAP");
+      }
+    } else {
+      listTeks.push("DATA ABSENSI TIDAK LENGKAP");
     }
+
+    listJenis.push("KETERANGAN");
+
+    const dataTableHeader = listJenis.map((jenis, index) => {
+      return { jenis, teks: `: ${listTeks[index]}` };
+    });
+
+    tableHeader.addBody(dataTableHeader);
+
     doc.moveDown();
 
     table
@@ -288,34 +294,116 @@ router.get("/:user", async (req, res) => {
           width: 150,
         },
       ])
+      .onRowAdd((tb, row) => {
+        const shade = "#525252";
+        const black = "#000";
+
+        tb.pdf.stroke(black);
+
+        if (row.no != "") return;
+        const w = tb.getColumnWidth("no") - 2;
+        const h = row._renderedContent.height - 2;
+        tb.pdf.rect(30, tb.pdf.y, w, h, shade).fillAndStroke(shade, shade);
+
+        tb.setColumnsDefaults({ border: ["T", "B"] });
+        // tb.setColumns()
+
+        // const w_t = tb.getWidth();
+        const w_t = tb.getColumnWidth("tanggal") - 3;
+        tb.pdf
+          .rect(30 + w + 3, tb.pdf.y, w_t, h, shade)
+          .fillAndStroke(shade, shade)
+          .fill(black);
+      })
       .onPageAdded(function (tb) {
+        tb.pdf.fillAndStroke("#000");
         tb.addHeader();
       });
+    const dataTable = historiList.map((absen, i) => {
+      if (absen.lokasi != null && absen.lokasi.length > 0) {
+        // console.log(absen.lokasi);
 
-    const dataTable = historiList.map((v, i) => {
+        absen.geolocation = [];
+
+        for (const lokasi of absen.lokasi) {
+          const dist = distance(
+            dataGeolocation.latitude,
+            dataGeolocation.longitude,
+            lokasi.latitude,
+            lokasi.longitude,
+            "K"
+          );
+
+          const jarakMeter = Math.round(dist * 1000);
+
+          if (absen.geolocation.length > 0) {
+            if (absen.geolocation[absen.geolocation.length - 1].keluar) {
+              if (jarakMeter <= dataGeolocation.radius)
+                absen.geolocation.push({ waktu: lokasi.waktu, keluar: false });
+            } else if (jarakMeter > dataGeolocation.radius) {
+              absen.geolocation.push({ waktu: lokasi.waktu, keluar: true });
+            }
+          } else if (jarakMeter > dataGeolocation.radius) {
+            absen.geolocation.push({ waktu: lokasi.waktu, keluar: true });
+          }
+        }
+      }
+
+      // console.log(absen.geolocation);
+
       return {
         no: i + 1,
-        tanggal: v.tanggal,
+        tanggal: absen.tanggal,
         waktuDatang:
-          v.status == "izin"
+          absen.status == "izin"
             ? "Izin"
-            : v.status == "cuti"
+            : absen.status == "cuti"
             ? "Cuti"
-            : v.waktuDatang,
+            : absen.waktuDatang,
         waktuPulang:
-          v.status == "izin"
+          absen.status == "izin"
             ? "Izin"
-            : v.status == "cuti"
+            : absen.status == "cuti"
             ? "Cuti"
-            : v.waktuPulang,
+            : absen.waktuPulang,
+        geolocation: absen.geolocation,
       };
     });
 
-    if (historiList.length > 0) table.addBody(dataTable);
-    else {
-      doc.moveDown();
-      doc.moveDown();
-      doc.moveDown();
+    if (historiList.length > 0) {
+      if (dataTable.some((his) => his.geolocation)) {
+        let dataTableGeolocation = [];
+
+        for (const data of dataTable) {
+          dataTableGeolocation.push(data);
+          if (data.geolocation == undefined) continue;
+
+          const dataLokasi = [];
+          for (const [index, geolocation] of data.geolocation.entries()) {
+            if (index == 0 || index % 2 == 0) {
+              dataLokasi.push({
+                no: "",
+                tanggal: "",
+                waktuDatang: geolocation.waktu,
+                waktuPulang: null,
+              });
+            } else {
+              dataLokasi[dataLokasi.length - 1].waktuPulang = geolocation.waktu;
+            }
+          }
+
+          dataTableGeolocation = [...dataTableGeolocation, ...dataLokasi];
+        }
+
+        table.addBody(dataTableGeolocation);
+      } else {
+        table.addBody(dataTable);
+      }
+
+      createTTD(doc);
+    } else {
+      doc.moveDown(3);
+      doc.x = 0;
       doc.fontSize(14).text(`Tidak ada data`, {
         underline: true,
         width: 530,
@@ -338,9 +426,9 @@ function createHeaderPDF(res, doc, bulan, tahun) {
 
   doc.pipe(res);
 
-  doc.font("Helvetica-Bold").fontSize(30).text("ABSENSI KARYAWAN", 140, 20);
+  doc.font("Helvetica-Bold").fontSize(20).text("ABSENSI KARYAWAN", 192, 20);
 
-  doc.fontSize(14).text(`LAPORAN ABSENSI KARYAWAN`, {
+  doc.fontSize(14).text(`LAPORAN ABSENSI KARYAWAN`, 140, 45, {
     width: 310,
     align: "center",
   });
@@ -352,6 +440,19 @@ function createHeaderPDF(res, doc, bulan, tahun) {
   });
 
   doc.font("Helvetica");
+}
+
+function createTTD(doc) {
+  const tanggal = moment().format("DD-MM-YYYY");
+
+  doc.x = 400;
+
+  doc.moveDown(2);
+  doc.text(`Parepare, ${tanggal}`);
+  doc.moveDown();
+  doc.text("PIMPINAN");
+  doc.moveDown(4);
+  doc.text("KARWITO");
 }
 
 module.exports = router;

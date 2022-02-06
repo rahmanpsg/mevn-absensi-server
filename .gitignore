@@ -2,6 +2,8 @@
 node_modules
 /dist
 
+assets/users.json
+
 
 # local env files
 .env

@@ -13,14 +13,11 @@
         {{ index + 1 }}
       </template>
 
-      <template v-slot:[`item.nama`]="{ item }">
+      <template v-slot:[`item.nama`]="{ item, index }">
         <v-row align="center" class="spacer py-3" no-gutters>
           <v-col cols="12" sm="2" md="2">
             <v-avatar>
-              <img
-                v-if="item.user.image"
-                :src="`data:image/jpeg;base64,${item.user.image}`"
-              />
+              <img v-if="item.user.image" :src="imageSrc[index]" />
               <img v-else src="@/assets/user.png" />
             </v-avatar>
           </v-col>
@@ -30,7 +27,7 @@
         </v-row>
       </template>
 
-      <template v-slot:[`item.tanggal`]="{ value }" ]>
+      <template v-slot:[`item.tanggal`]="{ value }">
         {{ formatTanggal(value) }}
       </template>
 
@@ -91,6 +88,21 @@ export default {
     loading: Boolean,
     expanded: Boolean,
     btnImage: Boolean,
+  },
+  computed: {
+    imageSrc() {
+      return this.items.map((item) => {
+        if (!item.user.image) return;
+        if (
+          item.user.image.startsWith("https://") ||
+          item.user.image.startsWith("http://")
+        ) {
+          return item.user.image;
+        }
+
+        return `data:image/jpeg;base64,${item.user.image}`;
+      });
+    },
   },
   methods: {
     formatTanggal(tanggal) {
