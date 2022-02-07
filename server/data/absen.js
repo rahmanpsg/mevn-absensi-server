@@ -180,5 +180,5 @@ module.exports = async function (req, res, sort = true) {
     cuti: totalCuti,
   };
 
-  return { historiList, total };
+  return { historiList, total, totalHariKerja: hariKerja.length };
 };

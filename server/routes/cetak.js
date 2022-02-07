@@ -217,7 +217,11 @@ router.get("/:user", async (req, res) => {
   const dataGeolocation = await geolocationModel.findOne();
 
   try {
-    const { historiList, total } = await getAbsens(req, res, false);
+    const { historiList, total, totalHariKerja } = await getAbsens(
+      req,
+      res,
+      false
+    );
 
     let doc = new PDFDocument({
       size: "LEGAL",
@@ -244,7 +248,9 @@ router.get("/:user", async (req, res) => {
       listTeks = [...listTeks, total.hadir, total.alpa, total.izin, total.cuti];
 
       if (
-        moment(historiList[0].tanggal, "DD-MM-YYYY").endOf("month") > moment()
+        moment(historiList[0].tanggal, "DD-MM-YYYY").endOf("month") >
+          moment() ||
+        historiList.length != totalHariKerja
       ) {
         listTeks.push("DATA ABSENSI TIDAK LENGKAP");
       } else {
