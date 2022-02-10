@@ -18,23 +18,6 @@
   },
   {
     "_id": {
-      "$oid": "61dc0d854a46520016043cde"
-    },
-    "username": "testing",
-    "password": "testing",
-    "nama": "gbfc",
-    "nik": "121212121",
-    "role": "karyawan",
-    "createdAt": {
-      "$date": "2022-01-10T10:42:13.276Z"
-    },
-    "updatedAt": {
-      "$date": "2022-01-10T10:42:13.276Z"
-    },
-    "__v": 0
-  },
-  {
-    "_id": {
       "$oid": "61e60f20095c8600168805d1"
     },
     "username": "Fani30",

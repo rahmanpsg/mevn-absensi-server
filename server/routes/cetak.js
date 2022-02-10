@@ -89,7 +89,10 @@ router.get("/", async (req, res) => {
         const totalCuti = await cutiModel
           .find({
             user: karyawan.id,
-            tanggal: { $regex: ".*" + `${cbulan}-${tahun}`, $lte: tanggal },
+            tanggal: {
+              $regex: ".*" + `${cbulan}-${tahun}`,
+              $lte: checkIfIsMonth(parseInt(cbulan), tahun) ? tanggal : "32",
+            },
             diterima: true,
           })
           .countDocuments();
@@ -98,6 +101,8 @@ router.get("/", async (req, res) => {
 
         const totalAlpa =
           totalHariKerja - totalHadir - totalCuti - (totalIzin - izinHadir);
+
+        // console.log(totalHariKerja);
 
         return {
           ...karyawan._doc,

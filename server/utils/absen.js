@@ -1,6 +1,7 @@
 const moment = require("moment");
 
 const ruleModel = require("../models/rule");
+const cutiModel = require("../models/cuti");
 const { convertHari } = require("./convert");
 
 async function genereteAbsen(tahun, cbulan) {
@@ -30,15 +31,21 @@ async function genereteAbsen(tahun, cbulan) {
 
     const rule = await ruleModel.find().select("hari jamDatang jamPulang");
 
-    const absen = harikerja.map((v) => {
+    const absen = harikerja.map(async (v) => {
       const date = v.split(" ")[0];
       const tanggal = moment(date).format("DD-MM-YYYY");
       const hari = moment(date).day();
 
+      const cekCuti = await cutiModel.find({ user, tanggal }).countDocuments();
+
+      // console.log(cekCuti);
+
+      if (cekCuti > 0) return;
+
       const { jamDatang, jamPulang } = rule.find((r) => r.hari == hari);
 
       // probabilitas tepat waktu
-      const prob = 90;
+      const prob = 70;
       let randWaktuDatang;
       let randWaktuPulang;
 
@@ -71,7 +78,7 @@ async function genereteAbsen(tahun, cbulan) {
     absens.push(...absen);
   }
 
-  return absens;
+  return Promise.all(absens);
   // absenModel.insertMany(absens).then(() => res.send({ res: true }));
 }
 
