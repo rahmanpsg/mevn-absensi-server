@@ -229,7 +229,7 @@ router.get("/:user", async (req, res) => {
     );
 
     let doc = new PDFDocument({
-      size: "LEGAL",
+      size: "A4",
       margins: { top: 10, left: 30, right: 30, bottom: 10 },
     });
 
@@ -297,12 +297,12 @@ router.get("/:user", async (req, res) => {
         {
           id: "waktuDatang",
           header: "Jam Datang",
-          width: 150,
+          width: 145,
         },
         {
           id: "waktuPulang",
           header: "Jam Pulang",
-          width: 150,
+          width: 145,
         },
       ])
       .onRowAdd((tb, row) => {

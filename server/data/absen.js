@@ -111,6 +111,7 @@ module.exports = async function (req, res, sort = true) {
   });
 
   hariKerja.forEach((h) => {
+    // console.log(h);
     if (data.some((absen) => absen.tanggal == h)) {
       return;
     }
@@ -153,7 +154,7 @@ module.exports = async function (req, res, sort = true) {
       });
     }
 
-    if (h < tanggal) {
+    if (!checkIfIsMonth(parseInt(cbulan), tahun)) {
       totalAlpa++;
 
       return data.push({
